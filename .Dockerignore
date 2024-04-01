@@ -1,0 +1,12 @@
+.vscode/**
+Dockerfile
+docker-compose*
+.gitignore
+.env
+json_files/**
+MAP_DATA/**
+images/**
+*.md
+.devcontainer/**
+stars-storage/**
+

@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>stars_ros_exporter</name>
+  <version>1.0.0</version>
+  <description>Bridge to read STARS ROS topics and export them to STARS compatible json format</description>
+  <maintainer email="valentin.rusche@udo.edu">Valentin Rusche</maintainer>
+  <license>AGPL-3.0-or-later</license>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>stars_ros_msgs</depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

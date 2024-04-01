@@ -1,0 +1,88 @@
+services:
+  carla:
+    image: carlasim/carla:${CARLA_ROS_BRIDGE_VERSION_OVERRIDDEN}
+    restart: on-failure
+    environment:
+      # display
+      DISPLAY: $DISPLAY
+      SDL_VIDEODRIVER: x11
+    volumes:
+      # display
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - stars-storage:${STARS_STORAGE_VOLUME}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    privileged: true
+    command: /bin/bash ./CarlaUE4.sh -carla-world-port=2000 -nosound -fps=15 -RenderOffScreen -quality-level=low
+
+  carla_ros_bridge:
+    build:
+      context: ${CARLA_ROS_BRIDGE_GIT_REPO}
+      dockerfile: ./docker/Dockerfile
+      args:
+        - ROS_DISTRO=foxy
+        #${ROS_VERSION_NAME}
+        - CARLA_VERSION=${CARLA_ROS_BRIDGE_VERSION_OVERRIDDEN}
+    image: carla_ros_bridge:${CARLA_ROS_BRIDGE_VERSION_OVERRIDDEN}
+    restart: on-failure
+    environment:
+      DISPLAY: $DISPLAY
+      SDL_VIDEODRIVER: x11
+    volumes:
+      # Start display
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # End display / start input devices
+      - /dev/input:/dev/input
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    command: /bin/bash -c "${CARLA_ROS_BRIDGE_MANUAL_CONTROL_LAUNCH}"
+    network_mode: "service:carla"
+
+  carla_stars_mapper:
+    build:
+      context: ${STARS_CARLA_ROS_MAPPER_GIT_REPO}
+      dockerfile: Mapper.Dockerfile
+      args:
+        - ENABLED_FLAG_DEV_MODE=${ENABLED_FLAG_DEV_MODE}
+        - UID=${UID:-1000}
+        - GID=${GID:-1000}
+    image: carla_stars_mapper:latest
+    restart: on-failure
+    volumes:
+      - stars-storage:${STARS_STORAGE_VOLUME}
+    command: ros2 run carla_stars_ros_mapper carla_stars_ros_mapper
+
+  stars_ros_exporter:
+    build:
+      context: ./python_bridge
+      dockerfile: Exporter.Dockerfile
+      args:
+        - ENABLED_FLAG_DEV_MODE=${ENABLED_FLAG_DEV_MODE}
+        - UID=${UID:-1000}
+        - GID=${GID:-1000}
+    image: stars_ros_exporter:latest
+    restart: on-failure
+    volumes:
+      - stars-storage:${STARS_STORAGE_VOLUME}
+    environment:
+      MAP_FILE_DIR: ${MAP_FILE_DIR}
+      SIMULATION_STARS_STATIC_FILE_DIR: ${STARS_STATIC_FILE_DIR}
+      SIMULATION_STARS_DYNAMIC_FILE_DIR: ${STARS_DYNAMIC_FILE_DIR}
+      ENABLED_FLAG_DYNAMIC_DATA_LOGGING: ${ENABLED_FLAG_DYNAMIC_DATA_LOGGING}
+      ENABLED_FLAG_STATIC_DATA_LOGGING: ${ENABLED_FLAG_STATIC_DATA_LOGGING}
+    command: ros2 run stars_ros_exporter stars_ros_exporter
+
+volumes:
+  stars-storage:
+    driver_opts:
+      type: none
+      o: bind
+      device: stars-storage

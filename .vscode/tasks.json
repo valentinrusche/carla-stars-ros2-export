@@ -1,0 +1,62 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Source ROS",
+      "type": "shell",
+      "command": ". /opt/ros/humble/setup.sh",
+      "dependsOrder": "sequence",
+      "group": "build"
+    },
+    {
+      "label": "Colcon Build",
+      "type": "shell",
+      "command": "colcon build --merge-install --packages-select stars_ros_exporter --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Source ROS"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Remove Bridge App Folders",
+      "type": "shell",
+      "command": "sudo rm -rf /app/install/share/stars_ros_exporter && sudo rm -rf /app/install/lib/stars_ros_exporter && sudo rm -rf /app/install/lib/python3.8/site-packages/stars_ros_exporter && sudo rm -rf /app/install/lib/python3.8/site-packages/stars_ros_exporter-0.0.1-py3.8.egg-info",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Colcon Build"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Move Bridge App Folders",
+      "type": "shell",
+      "command": "sudo mv -f ./install/lib/stars_ros_exporter /app/install/lib/ && sudo mv -f ./install/share/stars_ros_exporter /app/install/share/ && sudo mv -f ./install/lib/python3.8/site-packages/stars_ros_exporter /app/install/lib/python3.8/site-packages/ && sudo mv ./install/lib/python3.8/site-packages/stars_ros_exporter-0.0.1-py3.8.egg-info /app/install/lib/python3.8/site-packages/",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Remove Bridge App Folders"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Cleanup PWD",
+      "type": "shell",
+      "command": "sudo rm -rf ./install && rm -rf ./build && rm -rf ./log",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Move Bridge App Folders"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Build And Run",
+      "type": "shell",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Cleanup PWD"
+      ],
+      "command": ". /opt/ros/humble/setup.sh && COLCON_CURRENT_PREFIX=/app/install . /app/install/setup.sh && ros2 run stars_ros_exporter stars_ros_exporter",
+      "group": "build"
+    }
+  ]
+}
